@@ -5,6 +5,7 @@ import HomeLayout from '../View/HomeLayout'
 import Manage from '../View/Manage'
 import Home from '../View/Home'
 import Role from '../View/Role'
+import User from '../View/User'
 
 const routes = [
   {
@@ -40,6 +41,13 @@ const routes = [
             component: Role,
             key: 'manageRole',
             name: '角色管理'
+          },
+
+          {
+            path: "/manageUser",
+            component: User,
+            key: 'manageUser',
+            name: '用户管理'
           }
         ]
       },

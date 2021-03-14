@@ -1,61 +1,45 @@
 import React from 'react';
-import styled from "styled-components";
 import { Form, Input, Button } from 'antd';
+import * as IMG from '../constant/img'
+import {Bg, Content, login_input, login_btn} from './Style/LoginStyle'
+import { LockOutlined, UserOutlined } from '@ant-design/icons';
 
-const Bg = styled.div`
-  background-color: white;
-  position: absolute;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-  display: flex;
-  flex: 1;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
-`
-
-const Content = styled.div`
-  width: 400px;
-  height: 400px;
-  border-width: 1px;
-  background-color: cornflowerblue;
-  box-shadow: 0px 0px 10px cornflowerblue;
-  border-radius: 10px;
-  padding: 40px;
-`
-
-const tailLayout = {
-  wrapperCol: { offset: 8, span: 16 },
-};
 
 
 const Login = () => {
 
 
   return(
-    <Bg>
+    <Bg bg={IMG.bg}>
+
       <Content>
         <Form>
           <Form.Item
-            label="Username"
+            label=""
             name="username"
             rules={[{ required: true, message: 'Please input your username!' }]}
           >
-            <Input />
+            <Input
+              style={login_input}
+              placeholder={'账号'}
+              prefix={<UserOutlined/>}
+            />
           </Form.Item>
 
           <Form.Item
-            label="Password"
             name="password"
             rules={[{ required: true, message: 'Please input your password!' }]}
           >
-            <Input.Password />
+            <Input.Password
+              style={login_input}
+              visibilityToggle={false}
+              placeholder={'密码'}
+              prefix={<LockOutlined />}
+            />
           </Form.Item>
 
-          <Form.Item {...tailLayout}>
-            <Button type="primary" htmlType="submit">
+          <Form.Item>
+            <Button  htmlType="submit" style={login_btn}>
               Submit
             </Button>
           </Form.Item>
