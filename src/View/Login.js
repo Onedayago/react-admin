@@ -1,26 +1,53 @@
 import React from 'react';
 import { Form, Input, Button } from 'antd';
-import * as IMG from '../constant/img'
-import {Bg, Content, login_input, login_btn} from './Style/LoginStyle'
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
+import { useRequest } from 'ahooks';
+import {login} from '../api/user'
+import SUCCESS from '../api/message'
+import Style from './Style/loginStyle.module.css'
 
 
 
 const Login = () => {
 
 
-  return(
-    <Bg bg={IMG.bg}>
+  const { loading, run:runLogin } = useRequest(login, {
+    manual: true,
+    onSuccess: (result) => {
+      if(result.code === SUCCESS.loginSuccess.code){
 
-      <Content>
-        <Form>
+
+      }else{
+        alert(result.msg)
+      }
+    },
+    onError: (error)=>{
+      console.log(error)
+
+    }
+  });
+
+  const onLogin = async()=>{
+    await runLogin({
+      'username': 'ddd',
+      'password': '123456'
+    })
+  }
+
+  return(
+    <div  className={Style.container}>
+
+      <div className={Style.content}>
+        <Form
+          onFinish={onLogin}
+        >
           <Form.Item
             label=""
             name="username"
             rules={[{ required: true, message: 'Please input your username!' }]}
           >
             <Input
-              style={login_input}
+              className={Style.login_input}
               placeholder={'账号'}
               prefix={<UserOutlined/>}
             />
@@ -31,7 +58,7 @@ const Login = () => {
             rules={[{ required: true, message: 'Please input your password!' }]}
           >
             <Input.Password
-              style={login_input}
+              className={Style.login_input}
               visibilityToggle={false}
               placeholder={'密码'}
               prefix={<LockOutlined />}
@@ -39,13 +66,13 @@ const Login = () => {
           </Form.Item>
 
           <Form.Item>
-            <Button  htmlType="submit" style={login_btn}>
+            <Button  htmlType="submit" className={Style.login_btn} disabled={loading}>
               Submit
             </Button>
           </Form.Item>
         </Form>
-      </Content>
-    </Bg>
+      </div>
+    </div>
   )
 
 };

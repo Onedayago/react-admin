@@ -1,26 +1,26 @@
 
 
 /**
- * 将数组转成树状
+ * 将菜单数组转成树状，用来前端显示
  * 关联字段 parentKey key
  * @return
  * */
-export const arrayToTree=(parentKey, data)=> {
+export const arrayToTree=(parentId, data)=> {
 
   let temp = []
 
 
   for(let index in data){
 
-    if(data[index].parentKey === parentKey){
 
-      data[index].children = arrayToTree(data[index].key, data)
+    if(data[index].parentId === parentId){
+
+      data[index].children = arrayToTree(data[index]['_id'], data)
 
       temp.push(data[index])
     }
   }
 
-  console.log(temp)
 
   return temp
 

@@ -1,246 +1,198 @@
-
-
 import React, {useState, useEffect} from 'react'
-import {Button, Form, Input, Modal, Table} from 'antd';
-import MenuBtnList from '../component/menuBtnList'
-import PageBtn from '../constant/PageBtn'
-import * as Action from "../reducer/action";
-import {connect} from "react-redux";
-
-
-const dataSource = [
-  {
-    key: '1',
-    name: '胡彦斌',
-  },
-  {
-    key: '2',
-    name: '胡彦祖',
-  },
-];
-
-const columns = [
-  {
-    title: '角色名',
-    dataIndex: 'name',
-    key: 'name',
-  },
-  {
-    title: '功能',
-    key: 'action',
-    render:()=>{
-      return(
-        <>
-          <Button>编辑</Button>
-          <Button>删除</Button>
-          <Button>禁用</Button>
-        </>
-      )
-    }
-  },
-  {
-    title: '状态',
-    dataIndex: 'status',
-    key: 'status'
-  },
-];
+import {Button, Drawer, Form, Input, InputNumber, Select, Table} from "antd";
+import {useRequest} from "ahooks";
+import * as Api from "../api/user";
+import SUCCESS from "../api/message";
+import SelectMenu from '../component/SelectMenu'
 
 const layout = {
-  labelCol: { span: 5 },
+  labelCol: { span: 6 },
   wrapperCol: { span: 16 },
 };
 
 
+const { Option } = Select;
 
-
-const Role=(props)=>{
-
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [roleRoute, setRoleRoute] = useState(new Set())
-  const [roleBtn, setRoleBtn] = useState(new Set([]))
-
-  const [roles, setRoles] = useState([])
-
-
-  const [form] = Form.useForm();
-
-
-  useEffect(()=>{
-
-    let temp = []
-    props.role.forEach((item, index)=>{
-      let obj = {
-        key: index,
-        name: item.name
-      }
-
-      temp.push(obj)
-    })
-
-    setRoles(temp)
-
-  },[props.role])
-
-  const showModal = () => {
-    setIsModalVisible(true);
-  };
-
-  const handleOk = () => {
-    setIsModalVisible(false);
-  };
-
-  const handleCancel = () => {
-    setIsModalVisible(false);
-  };
-
-  const onAdd = (values)=>{
-
-    let role = {
-      name: values.name,
-      route: Array.from(roleRoute),
-      btn: Array.from(roleBtn)
-    }
-
-    let index = props.role.findIndex((item)=>item.name === values.name)
-
-    if(index === -1){
-      props.addRole(role)
-    }else{
-      alert('重复，添加失败')
-      return;
-    }
-    setIsModalVisible(false);
-
+const columns = [
+  {
+    title: '角色名称',
+    dataIndex: 'roleName',
+    key: 'roleName',
+  },
+  {
+    title: '角色描述',
+    dataIndex: 'roleDes',
+    key: 'roleDes',
+  },
+  {
+    title: '排序',
+    dataIndex: 'sort',
+    key: 'sort',
   }
+];
 
-  const changeRoute = (res)=>{
+const ROLE_ACTION = {
+  ADD_ROLE: 'addRole',
+  EDIT_ROLE: 'editRole',
+  DELETE_ROLE: 'deleteRole'
+}
 
+const Role=()=>{
 
-    let temp = new Set([...roleRoute])
+  const [role ,setRole] = useState([])
+  const [selectedRowKeys, setSelectRowKeys] = useState([])
+  const [selectRow, setSelectRow] = useState({})
+  const [form] = Form.useForm();  //获取表单
+  const [visible, setVisible] = useState(false)
+  const [edit, setEdit] = useState(false)
+  const [permissionId, setPermissionId] = useState([])
 
-    if(res.add){
-      temp.add(res.route)
-      setRoleRoute(temp)
-    }else{
-      temp.delete(res.route)
+  const roleAction=(type)=>{
+    switch (type) {
+      case ROLE_ACTION.ADD_ROLE:
+        setVisible(true)
+        setEdit(false)
+        break;
+      case ROLE_ACTION.EDIT_ROLE:
 
-      let temp2 =new Set([...roleBtn].filter(val => {
-
-        return val.indexOf(res.route) ===-1
-
-      }));
-
-      setRoleBtn(temp2);
-      setRoleRoute(temp)
-    }
-  }
-
-  const changeBtn = (res) =>{
-
-
-    let temp = new Set([...roleBtn])
-
-    if(res.add){
-      temp.add(res.btn)
-      setRoleBtn(temp)
-    }else{
-      temp.delete(res.btn)
-      setRoleBtn(temp)
-    }
-  }
-
-  const edit = (values) =>{
-    setIsModalVisible(true);
-
-
-  }
-
-  const deleteRole = (values) =>{
-
-    let temp = props.role.filter((item)=>item.name !== values.name)
-
-    props.deleteRole(temp)
-
-  }
-
-  const renderItem = () =>{
-    return [
-      {
-        title: '角色名',
-        dataIndex: 'name',
-        key: 'name',
-      },
-      {
-        title: '功能',
-        key: 'action',
-        render:(values)=>{
-          return(
-            <>
-              <Button onClick={()=>edit(values)}>编辑</Button>
-              <Button onClick={()=>deleteRole(values)}>删除</Button>
-              <Button>禁用</Button>
-            </>
-          )
+        if(selectRow.roleName){
+          setVisible(true)
+          setEdit(true)
+        }else{
+          alert('请先选择角色')
         }
-      },
-      {
-        title: '状态',
-        dataIndex: 'status',
-        key: 'status'
-      },
-    ]
+
+
+        break;
+      case ROLE_ACTION.DELETE_ROLE:
+        break;
+      default:
+        break;
+    }
   }
 
+  useEffect(async ()=>{
+    await postGetRole()
+  },[])
 
-  return(
-    <>
-      <Table dataSource={roles} columns={renderItem()} />
+  /**
+   * 获取角色接口
+   * */
+  const {run:postGetRole } = useRequest(Api.getRole, {
+    manual: true,
+    onSuccess: async (result) => {
+      if(result.code === SUCCESS.GetRoleSuccess.code){
 
-      <Button onClick={showModal}>添加新角色</Button>
+        setRole(result.data)
+      }else{
+        alert(result.msg)
+      }
+    },
+    onError: (error)=>{
+      console.log(error)
+
+    }
+  });
+
+  /**
+   * 添加角色接口
+   * */
+  const {run:postAddRole } = useRequest(Api.addRole, {
+    manual: true,
+    onSuccess: async (result) => {
+      if(result.code === SUCCESS.AddRoleSuccess.code){
+        setVisible(false)
+        await postGetRole()
+      }else{
+        alert(result.msg)
+      }
+    },
+    onError: (error)=>{
+      console.log(error)
+
+    }
+  });
+
+  const onSelectChange = (record, selected, selectedRows) => {
+
+    console.log(selected)
+    if(selected){
+      setSelectRowKeys([record._id])
+      setSelectRow(record)
+    }else{
+      setSelectRowKeys([])
+      setSelectRow({})
+    }
 
 
+  };
 
-      <Modal title="新增角色" visible={isModalVisible} onOk={handleOk} onCancel={handleCancel}>
+  const rowSelection = {
+    selectedRowKeys,
+    onSelect: onSelectChange,
+    hideSelectAll: true,
+    checkStrictly: true
+  };
+
+
+  const onAddRole=async (values)=>{
+
+    const {roleName, roleDes, sort} = values
+
+    await postAddRole({
+      roleName,
+      roleDes,
+      sort,
+      permissionId
+    })
+  }
+
+  /**
+   * 渲染新增菜单弹窗
+   * */
+
+  const renderAddRole=()=>{
+    return(
+      <>
         <Form
           form={form}
           {...layout}
-          initialValues={{parentKey: '' }}
-          onFinish={onAdd}
+          initialValues={{}}
+          onFinish={onAddRole}
         >
           <Form.Item
-            label="角色名"
-            name="name"
+            label="角色名称"
+            name="roleName"
             rules={[{ required: true, message: '' }]}
           >
 
             <Input
-              placeholder={'角色名'}
+              placeholder={'角色名称'}
             />
           </Form.Item>
 
-          <div>
+          <Form.Item
+            label="角色描述"
+            name="roleDes"
+            rules={[{ required: false, message: '' }]}
+          >
 
-            {Object.keys(PageBtn).map(item => {
-
-                let name = PageBtn[item].name
-                let routes = PageBtn[item].routes
-
-                return(
-                  <MenuBtnList
-                    key={item}
-                    route={item}
-                    name={name}
-                    btn={routes}
-                    changeRoute={changeRoute}
-                    changeBtn={changeBtn}
-                  />
-                )
-              }
-            )}
+            <Input
+              placeholder={'角色描述'}
+            />
+          </Form.Item>
 
 
-          </div>
+          <Form.Item
+            label="排序"
+            name="sort"
+            rules={[{ required: true, message: '请输入菜单排序', type: 'number' }]}
+          >
+            <InputNumber
 
+            />
+
+          </Form.Item>
 
           <Form.Item
             name="editBtn"
@@ -250,26 +202,126 @@ const Role=(props)=>{
             </Button>
           </Form.Item>
         </Form>
-      </Modal>
+
+        <SelectMenu
+          setPermissionId={(permissionId)=>{
+            setPermissionId(permissionId)
+          }}
+        />
+
+      </>
+
+    )
+  }
+
+  /**
+   * 渲染编辑角色弹窗
+   * */
+
+  const renderEditRole=()=>{
+    return(
+      <>
+        <Form
+          form={form}
+          {...layout}
+          initialValues={{}}
+          onFinish={onAddRole}
+        >
+          <Form.Item
+            label="角色名称"
+            name="roleName"
+            rules={[{ required: true, message: '' }]}
+          >
+
+            <Input
+              placeholder={'角色名称'}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="角色描述"
+            name="roleDes"
+            rules={[{ required: false, message: '' }]}
+          >
+
+            <Input
+              placeholder={'角色描述'}
+            />
+          </Form.Item>
+
+
+          <Form.Item
+            label="排序"
+            name="sort"
+            rules={[{ required: true, message: '请输入菜单排序', type: 'number' }]}
+          >
+            <InputNumber
+
+            />
+
+          </Form.Item>
+
+          <Form.Item
+            name="editBtn"
+          >
+            <Button type="primary" htmlType="submit">
+              确认
+            </Button>
+          </Form.Item>
+        </Form>
+
+        <SelectMenu
+          setPermissionId={(permissionId)=>{
+            setPermissionId(permissionId)
+          }}
+          _id={selectRow._id}
+        />
+
+      </>
+
+    )
+  }
+
+  const onClose = () =>{
+    setVisible(false)
+  }
+
+  return(
+    <>
+      <Table
+        dataSource={role}
+        columns={columns}
+        rowSelection={rowSelection}
+        pagination={false}
+        rowKey={'_id'}
+      />
+
+      <Button onClick={()=>roleAction(ROLE_ACTION.ADD_ROLE)}>新增</Button>
+      <Button onClick={()=>roleAction(ROLE_ACTION.EDIT_ROLE)}>编辑</Button>
+      <Button onClick={()=>roleAction(ROLE_ACTION.DELETE_ROLE)}>删除</Button>
+
+
+
+      <Drawer
+        title={edit?"编辑角色":"新增角色"}
+        placement="right"
+        closable={false}
+        onClose={onClose}
+        visible={visible}
+        width={500}
+      >
+
+        {
+          edit?
+            renderEditRole()
+            :
+            renderAddRole()
+        }
+
+      </Drawer>
     </>
   )
 }
 
 
-
-const mapStateToProps = (state, ownProps) => {
-  return {
-    role: state.UserReducer.role
-  }
-}
-
-const mapDispatchToProps = (dispatch, ownProps) => {
-  return {
-    addRole: (role)=>dispatch(Action.addRole(role)),
-    deleteRole: (role)=>dispatch(Action.deleteRole(role))
-  }
-}
-
-
-
-export default connect(mapStateToProps, mapDispatchToProps)(Role)
+export default Role
