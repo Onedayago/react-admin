@@ -2,48 +2,22 @@ import React,{useState, useEffect} from 'react'
 import { Menu, Button, Layout } from 'antd';
 import {NavLink} from 'react-router-dom';
 import {
-  AppstoreOutlined,
   MenuUnfoldOutlined,
   MenuFoldOutlined,
   PieChartOutlined,
-  DesktopOutlined,
-  ContainerOutlined,
   MailOutlined,
 } from '@ant-design/icons';
 import {renderRoutes} from "react-router-config";
-import * as Action from "../reducer/action";
 import {connect} from "react-redux";
 import Style from './Style/homeLayout.module.css'
-import {useRequest} from "ahooks";
-import * as Api from "../api/user";
-import SUCCESS from "../api/message";
-import * as Tool from '../util/tool'
-
-
+import * as Storage from '../util/Storage'
+import {useHistory} from 'react-router'
+import * as Tool from "../util/tool";
 
 const { SubMenu } = Menu;
 
-const { Header, Sider, Content, Footer} = Layout;
+const { Header, Sider, Content} = Layout;
 
-
-const arrayToTree=(parentKey, data)=> {
-
-  let temp = []
-
-  for(let index in data){
-
-    if(data[index].parentKey === parentKey){
-
-      data[index].children = arrayToTree(data[index].key, data)
-
-      temp.push(data[index])
-    }
-  }
-
-
-  return temp
-
-}
 
 const HomeLayout =(props)=>{
 
@@ -51,19 +25,20 @@ const HomeLayout =(props)=>{
   const [menu, setMenu] = useState([])
 
 
+  const history = useHistory()
+
   const toggleCollapsed = () => {
     toggleCollapse((collapsed)=>{
       return !collapsed
     })
   };
 
-  useEffect(()=>{
-
-  },[])
-
 
   useEffect(()=>{
 
+    let temp = Tool.arrayToTree("",JSON.parse(JSON.stringify(props.menu)))
+
+    setMenu(temp)
 
   },[props.menu])
 
@@ -98,10 +73,15 @@ const HomeLayout =(props)=>{
           defaultSelectedKeys={['home']}
           mode="inline"
           theme="dark"
-          inlineCollapsed={collapsed}
         >
+          <Menu.Item key={'/'} icon={<PieChartOutlined />}>
+            <NavLink to={'/'}>
+              首页
+            </NavLink>
+          </Menu.Item>
+
           {
-            renderMenu(props.menu)
+            renderMenu(menu)
           }
 
         </Menu>
@@ -112,10 +92,14 @@ const HomeLayout =(props)=>{
           <Button type="primary" onClick={toggleCollapsed}>
             {React.createElement(collapsed ? MenuUnfoldOutlined : MenuFoldOutlined)}
           </Button>
+          <Button onClick={()=>{
+            Storage.RemoveToken()
+            history.push('/login')
+          }}>退出登录</Button>
         </Header>
         <Content
         >
-          {renderRoutes(props.route.routes)}
+          {renderRoutes(props.route.routes, {menu: props.menu})}
         </Content>
       </Layout>
     </Layout>

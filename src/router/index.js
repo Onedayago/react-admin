@@ -6,6 +6,57 @@ import Manage from '../View/ManageV2'
 import Home from '../View/Home'
 import Role from '../View/Role'
 import User from '../View/User'
+import NotFound from '../View/NotFound'
+import {Redirect} from 'react-router-dom'
+import * as Storage from '../util/Storage'
+
+const Private = (component, props) =>{
+
+  if(Storage.GetToken() && Storage.GetToken()!==''){
+    return component
+  }else{
+    return <Redirect
+      to={{
+        pathname: "/login",
+        state: { from: props.location }
+      }}
+    />
+  }
+
+}
+
+const HasLogin=(component, props)=>{
+
+  if(Storage.GetToken() && Storage.GetToken()!==''){
+    return <Redirect
+      to={{
+        pathname: "/",
+        state: { from: props.location }
+      }}
+    />
+  }else{
+    return component
+  }
+}
+
+const HasRoute=(component, props, path)=>{
+  console.log(props)
+
+  let item = props.menu.find((item)=>item.route === path)
+
+  if(item){
+    return component
+  }else{
+    return <Redirect
+      to={{
+        pathname: "/404",
+        state: { from: props.location }
+      }}
+    />
+  }
+
+}
+
 
 const routes = [
   {
@@ -15,42 +66,63 @@ const routes = [
         path: "/login",
         key: 'login',
         name: '登录',
-        component: Login
+        render: (props => {
+          return HasLogin(<Login {...props}/>, props)
+        })
       },
       {
         path: "/",
-        component: HomeLayout,
+        render: (props)=>{
+          return Private(<HomeLayout {...props}/>, props)
+        },
         key: '/',
         routes: [
           {
-            path: "/index",
+            path: "/",
             component: Home,
-            key: 'index',
-            name: '首页'
+            key: '/',
+            name: '首页',
+            exact: true
           },
 
           {
             path: "/manageMenu",
             component: Manage,
             key: 'manageMenu',
-            name: '菜单管理'
+            name: '菜单管理',
+            render: (props)=>{
+              return HasRoute(<Manage {...props}/>, props, "manageMenu")
+            }
           },
 
           {
             path: "/manageRole",
             component: Role,
             key: 'manageRole',
-            name: '角色管理'
+            name: '角色管理',
+            render: (props)=>{
+              return HasRoute(<Role {...props}/>, props, "manageRole")
+            }
           },
 
           {
             path: "/manageUser",
             component: User,
             key: 'manageUser',
-            name: '用户管理'
+            name: '用户管理',
+            render: (props)=>{
+              return HasRoute(<User {...props}/>, props, "manageUser")
+            }
+          },
+
+          {
+            path: "*",
+            key: 'notfound',
+            component: NotFound
           }
         ]
       },
+
     ]
   }
 ];

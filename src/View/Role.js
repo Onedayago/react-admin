@@ -1,5 +1,5 @@
 import React, {useState, useEffect} from 'react'
-import {Button, Drawer, Form, Input, InputNumber, Select, Table} from "antd";
+import {Button, Drawer, Form, Input, InputNumber, Select, Table, message, Modal} from "antd";
 import {useRequest} from "ahooks";
 import * as Api from "../api/user";
 import SUCCESS from "../api/message";
@@ -47,9 +47,12 @@ const Role=()=>{
   const [edit, setEdit] = useState(false)
   const [permissionId, setPermissionId] = useState([])
 
-  const roleAction=(type)=>{
+  const [show, setShow] = useState(false)
+
+  const roleAction=async (type)=>{
     switch (type) {
       case ROLE_ACTION.ADD_ROLE:
+        form.resetFields()
         setVisible(true)
         setEdit(false)
         break;
@@ -58,22 +61,71 @@ const Role=()=>{
         if(selectRow.roleName){
           setVisible(true)
           setEdit(true)
+          form.resetFields()
+          form.setFieldsValue({
+            roleName: selectRow.roleName,
+            roleDes: selectRow.roleDes,
+            sort: selectRow.sort
+          })
         }else{
-          alert('请先选择角色')
+          message.error('请先选择角色')
         }
-
 
         break;
       case ROLE_ACTION.DELETE_ROLE:
+        if(selectRow.roleName){
+         setShow(true)
+        }else{
+          message.error('请先选择角色')
+        }
         break;
       default:
         break;
     }
   }
 
-  useEffect(async ()=>{
-    await postGetRole()
+  useEffect( ()=>{
+    postGetRole()
   },[])
+
+  /**
+   * 删除角色接口
+   * */
+  const {run:postDeleteRole } = useRequest(Api.deleteRole, {
+    manual: true,
+    onSuccess: async (result) => {
+      if(result.code === SUCCESS.DeleteRoleSuccess.code){
+        setShow(false)
+        message.success('删除角色成功')
+        await postGetRole()
+      }else{
+        message.error(result.msg)
+      }
+    },
+    onError: (error)=>{
+      console.log(error)
+
+    }
+  });
+
+  /**
+   * 编辑角色接口
+   * */
+  const {run:postEditRole } = useRequest(Api.editRole, {
+    manual: true,
+    onSuccess: async (result) => {
+      if(result.code === SUCCESS.EditRoleSuccess.code){
+        message.success('编辑角色成功')
+        await postGetRole()
+      }else{
+        message.error(result.msg)
+      }
+    },
+    onError: (error)=>{
+      console.log(error)
+
+    }
+  });
 
   /**
    * 获取角色接口
@@ -82,10 +134,10 @@ const Role=()=>{
     manual: true,
     onSuccess: async (result) => {
       if(result.code === SUCCESS.GetRoleSuccess.code){
-
+        setVisible(false)
         setRole(result.data)
       }else{
-        alert(result.msg)
+        message.error(result.msg)
       }
     },
     onError: (error)=>{
@@ -101,10 +153,11 @@ const Role=()=>{
     manual: true,
     onSuccess: async (result) => {
       if(result.code === SUCCESS.AddRoleSuccess.code){
+        message.success('添加角色成功')
         setVisible(false)
         await postGetRole()
       }else{
-        alert(result.msg)
+        message.error(result.msg)
       }
     },
     onError: (error)=>{
@@ -115,7 +168,6 @@ const Role=()=>{
 
   const onSelectChange = (record, selected, selectedRows) => {
 
-    console.log(selected)
     if(selected){
       setSelectRowKeys([record._id])
       setSelectRow(record)
@@ -139,13 +191,28 @@ const Role=()=>{
 
     const {roleName, roleDes, sort} = values
 
-    await postAddRole({
-      roleName,
-      roleDes,
-      sort,
-      permissionId
-    })
+    if(edit){
+
+      await postEditRole({
+        _id: selectRow._id,
+        roleName,
+        roleDes,
+        sort,
+        permissionId
+      })
+    }else{
+      await postAddRole({
+        roleName,
+        roleDes,
+        sort,
+        permissionId
+      })
+    }
+
+
   }
+
+
 
   /**
    * 渲染新增菜单弹窗
@@ -205,6 +272,8 @@ const Role=()=>{
 
         <SelectMenu
           setPermissionId={(permissionId)=>{
+            console.log(permissionId)
+
             setPermissionId(permissionId)
           }}
         />
@@ -309,6 +378,7 @@ const Role=()=>{
         onClose={onClose}
         visible={visible}
         width={500}
+        destroyOnClose={true}
       >
 
         {
@@ -319,6 +389,22 @@ const Role=()=>{
         }
 
       </Drawer>
+
+      <Modal
+        title={'删除角色'}
+        visible={show}
+        centered={true}
+        onOk={async ()=>{
+          await postDeleteRole({
+            _id: selectRow._id
+          })
+        }}
+        onCancel={()=>{
+          setShow(false)
+        }}
+      >
+        {`是否要删除角色${selectRow.roleName}`}
+      </Modal>
     </>
   )
 }

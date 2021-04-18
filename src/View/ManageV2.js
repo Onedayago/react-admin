@@ -1,5 +1,5 @@
 import React, {useState, useEffect} from 'react'
-import {Button, Drawer, Form, Input, Select, Table, InputNumber} from 'antd'
+import {Button, Drawer, Form, Input, Select, Table, InputNumber, message, Modal} from 'antd'
 import routes from '../router/index';
 import * as Tool from "../util/tool";
 import { useRequest } from 'ahooks';
@@ -51,6 +51,8 @@ const ManageV2=(props)=>{
   const [route, setRoute] = useState([])  //设置可选择的路由
   const [form] = Form.useForm();  //获取表单
 
+  const [show, setShow] = useState(false)
+
   /**
    * 页面首次渲染
    * */
@@ -69,11 +71,11 @@ const ManageV2=(props)=>{
     manual: true,
     onSuccess: async (result) => {
       if(result.code === SUCCESS.UpdateMenuSuccess.code){
-        console.log(result.data)
+        message.success('修改菜单成功')
         setVisible(false)
         await postGetMenu()
       }else{
-        alert(result.msg)
+        message.error(result.msg)
       }
     },
     onError: (error)=>{
@@ -90,10 +92,11 @@ const ManageV2=(props)=>{
     manual: true,
     onSuccess: async (result) => {
       if(result.code === SUCCESS.DeleteMenuSuccess.code){
-        console.log(result.data)
+        setShow(false)
+        message.success('删除菜单成功')
         await postGetMenu()
       }else{
-        alert(result.msg)
+        message.error(result.msg)
       }
     },
     onError: (error)=>{
@@ -110,15 +113,13 @@ const ManageV2=(props)=>{
     onSuccess: (result) => {
       if(result.code === SUCCESS.GetMenuSuccess.code){
 
-
-
-        let temp = Tool.arrayToTree("",result.data)
+        let temp = Tool.arrayToTree("",JSON.parse(JSON.stringify(result.data)))
 
         setMenu(temp)
 
-        props.addMenu(temp)
+        props.addMenu(result.data)
       }else{
-        alert(result.msg)
+        message.error(result.msg)
 
       }
     },
@@ -136,12 +137,13 @@ const ManageV2=(props)=>{
     onSuccess: async (result) => {
       if (result.code === SUCCESS.AddMenuSuccess.code) {
 
+        message.success('添加菜单成功')
         setVisible(false)
 
         await postGetMenu()
 
       } else {
-        alert(result.msg)
+        message.error(result.msg)
       }
     },
     onError: (error)=>{
@@ -200,17 +202,15 @@ const ManageV2=(props)=>{
           setEdit(true)
           setVisible(true)
         }else{
-          alert('请先勾选要编辑的菜单')
+          message.error('请先勾选要编辑的菜单')
         }
 
         break;
       case MENU_ACTION.DELETE_MENU:
         if(selectRow.name){
-          await postDeleteMenu({
-            '_id': selectRow._id
-          })
+          setShow(true)
         }else{
-          alert('请先勾选要删除的菜单')
+          message.error('请先勾选要删除的菜单')
         }
         break;
       default:
@@ -480,6 +480,22 @@ const ManageV2=(props)=>{
         }
 
       </Drawer>
+
+      <Modal
+        title={'删除菜单'}
+        visible={show}
+        centered={true}
+        onOk={async ()=>{
+          await postDeleteMenu({
+            '_id': selectRow._id
+          })
+        }}
+        onCancel={()=>{
+          setShow(false)
+        }}
+      >
+        {`是否要删除菜单${selectRow.name}`}
+      </Modal>
     </>
   )
 }

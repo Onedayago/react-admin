@@ -37,7 +37,37 @@ const SUCCESS = {
   GetRolePermissionSuccess: {
     code: 20009,
     msg: '获取角色菜单成功'
-  }
+  },
+
+  DeleteRoleSuccess: {
+    code: 20007,
+    msg: '删除角色成功'
+  },
+
+  EditRoleSuccess: {
+    code: 20008,
+    msg: '编辑角色成功'
+  },
+
+  AddUserSuccess: {
+    code: 20010,
+    msg: '添加用户成功'
+  },
+
+  DeleteUserSuccess: {
+    code: 20011,
+    msg: '删除用户成功'
+  },
+
+  EditUserSuccess: {
+    code: 20012,
+    msg: '编辑用户成功'
+  },
+
+  GetUserSuccess: {
+    code: 20013,
+    msg: '获取用户成功'
+  },
 }
 
 export default SUCCESS

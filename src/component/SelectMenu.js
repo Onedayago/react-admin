@@ -5,6 +5,7 @@ import PropTypes from 'prop-types'
 import {useRequest} from "ahooks";
 import * as Api from "../api/user";
 import SUCCESS from "../api/message";
+import * as Tool from "../util/tool";
 
 
 const columns = [
@@ -23,14 +24,24 @@ const columns = [
 const SelectMenu=(props)=>{
 
   const [selectedRowKeys, setSelectRowKeys] = useState([])
+  const [menu, setMenu] = useState([])  //菜单数据
+
+
+  useEffect(()=>{
+    let temp = Tool.arrayToTree("",JSON.parse(JSON.stringify(props.menu)))
+
+    console.log(props.menu)
+    setMenu(temp)
+  },[])
 
   useEffect(async ()=>{
 
-    await postGetRolePermission({
+    postGetRolePermission({
       _id: props._id
     })
 
   },[props._id])
+
 
   /**
    * 获取角色权限接口
@@ -50,9 +61,10 @@ const SelectMenu=(props)=>{
 
 
         setSelectRowKeys(temp)
+        props.setPermissionId(temp)
 
       }else{
-        alert(result.msg)
+
       }
     },
     onError: (error)=>{
@@ -63,12 +75,22 @@ const SelectMenu=(props)=>{
 
   const onSelectChange = (selectedRowKeys) => {
 
-    console.log(selectedRowKeys)
+    selectedRowKeys.forEach((item)=>{
+
+      let menu = props.menu.find((value)=>value._id === item)
+
+      if(menu.parentId !== "" && selectedRowKeys.indexOf(menu.parentId) < 0){
+        selectedRowKeys.push(menu.parentId)
+      }
+
+    })
+
     setSelectRowKeys(selectedRowKeys)
 
     props.setPermissionId(selectedRowKeys)
 
   };
+
 
   const rowSelection = {
     selectedRowKeys,
@@ -80,7 +102,7 @@ const SelectMenu=(props)=>{
   return(
     <>
       <Table
-        dataSource={props.menu}
+        dataSource={menu}
         columns={columns}
         rowSelection={rowSelection}
         pagination={false}

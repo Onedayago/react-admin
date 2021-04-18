@@ -1,7 +1,7 @@
 
 import axios from 'axios'
 import qs from 'qs'
-
+import * as Storage from '../util/Storage'
 
 
 function request(url='', data={}, method = '') {
@@ -12,6 +12,7 @@ function request(url='', data={}, method = '') {
   config.url=url
   config.headers={
     'Content-Type': 'application/x-www-form-urlencoded',
+    'token': Storage.GetToken()
   }
 
 
@@ -75,4 +76,35 @@ export function getRole(data={}) {
 export function getRolePermission(data={}) {
 
   return request('api/role/getRolePermission', data, 'post')
+}
+
+export function deleteRole(data={}) {
+
+  return request('api/role/deleteRole', data, 'delete')
+}
+
+export function editRole(data={}) {
+
+  return request('api/role/editRole', data, 'patch')
+}
+
+export function addUser(data={}) {
+
+  return request('api/user/addUser', data, 'post')
+}
+
+export function editUser(data={}) {
+
+  return request('api/user/editUser', data, 'patch')
+}
+
+export function getUser(data={}) {
+
+  return request('api/user/getUser', data, 'post')
+}
+
+
+export function deleteUser(data={}) {
+
+  return request('api/user/deleteUser', data, 'delete')
 }
